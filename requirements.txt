@@ -5,3 +5,5 @@ pydeck
 streamlit
 folium
 requests
+plotly
+plotly.express
