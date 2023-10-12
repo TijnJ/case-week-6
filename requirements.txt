@@ -7,3 +7,4 @@ plotly
 spicy
 matplotlib
 requests
+folium
