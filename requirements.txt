@@ -10,3 +10,4 @@ requests
 folium
 openpyxl
 streamlit_folium
+seaborn
