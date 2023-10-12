@@ -14,8 +14,13 @@
 
 import streamlit as st
 from streamlit.logger import get_logger
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
 
 LOGGER = get_logger(__name__)
+
 
 
 def run():
@@ -24,27 +29,22 @@ def run():
         page_icon="hello",
     )
 
+    laadpalen = pd.read_csv('laadpaaldata.csv')
+    
+
     st.write("# Welcome to Streamlit! 👋")
+    data  = laadpalen[(laadpalen['ChargeTime'] > 0) & (laadpalen['ChargeTime'] < 10)]
+    laadtijd = data['ChargeTime']
+    fig =  px.histogram(x = laadtijd,nbins = 20,title="Verdeling van oplaadtijd")
+    fig.add_vline(x=laadtijd.median(),annotation_text='median',annotation_position="top left")
+    fig.add_vline(x=laadtijd.mean(),annotation_text='mean',annotation_position="top right")
+    
 
-    st.sidebar.success("Select a demo above.")
+    st.plotly_chart(fig, use_container_width=True) 
 
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
+
+    
+
 
 
 if __name__ == "__main__":
