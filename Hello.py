@@ -289,14 +289,23 @@ def run():
     GekentekendeVoertuigen = LaadDataAPI('https://opendata.rdw.nl/resource/m9d7-ebf2.json?$limit=100')
     LaadPalen = pd.read_csv('laadpaaldata.csv')
     plot = HistLaadpalen(LaadPalen)
-    MapPalen = MapLaadPalen()
-
     st.pyplot(fig=plot, clear_figure=None, use_container_width=True)
+
     KaartPaal,AantalPProv,TopGemeente = MapLaadPalen()
     folium_static(KaartPaal)
-    st.pyplot(fig=AantalPProv, clear_figure=None, use_container_width=True)
-    st.pyplot(fig=TopGemeente, clear_figure=None, use_container_width=True)
+    st.write("""In deze dataset staan gegevens over laadpalen in Nederland. Deze gegevens zijn verkregen via een API, waarmee we informatie hebben verzameld over laadpalen verspreid over het hele land. Onze analyse richtte zich op het begrijpen van de verdeling van laadpalen per provincie. We hebben ervoor gekozen om deze informatie te visualiseren doormiddel van een kaart. De punten op de kaart vertegenwoordigen individuele laadpalen en geven aan waar deze zich bevinden in Nederland. Elk van deze punten draagt bij aan het grotere geheel: het netwerk van laadinfrastructuur dat elektrische voertuigen ondersteunt in ons land.
+Om de analyse visueel interessanter te maken, hebben we ervoor gekozen om de laadpalen te kleuren op basis van de provincies waarin ze zich bevinden. Deze kleurcodering helpt ons om patronen en verschillen tussen provincies gemakkelijk te herkennen. Het stelt ons in staat om te zien hoe de beschikbaarheid van laadinfrastructuur varieert in verschillende delen van Nederland.
 
+             
+             """)
+    st.pyplot(fig=AantalPProv, clear_figure=None, use_container_width=True)
+    st.write("""De grafiek toont het aantal laadpalen per provincie in Nederland. Het staafdiagram geeft duidelijk weer welke provincies het meeste aantal laadpalen hebben en welke provincies wat achterblijven in de uitrol van laadinfrastructuur voor elektrische voertuigen. Nederland heeft als geheel een sterk ontwikkelde laadinfrastructuur , maar er is nog steeds variatie is tussen provincies. De analyse benadrukt het belang van een evenwichtige uitrol van laadpalen om een breed scala aan gebruikers te bedienen. Uit de grafiek kunnen we afleiden dat "Noord-Holland" de provincie is met het hoogste aantal laadpalen, gevolgd door "Zuid-Holland". Aan de andere kant hebben provincies zoals "Limburg" en "Zeeland" relatief minder laadpalen in vergelijking met de rest van Nederland.
+             
+             """)
+    st.pyplot(fig=TopGemeente, clear_figure=None, use_container_width=True)
+    st.write("""De grafiek presenteert een overzicht van de top 10 gemeentes met het hoogste aantal laadpalen in Nederland. Deze analyse werpt licht op de inspanningen van deze gemeentes om elektrische voertuigen te ondersteunen en laat zien hoe ze zich verhouden tot andere gemeentes in het land. 
+Kleuren worden gebruikt om elke gemeente in de top 10 gemakkelijk te identificeren. Elke kleur staat in verband met de kleur van de provincies, zo valt te zien dat er drie gemeentes uit zowel Noord- als Zuid-holland in de top 10 staan met meeste laadpalen.
+""")
 
 
 if __name__ == "__main__":
