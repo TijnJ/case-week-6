@@ -24,7 +24,7 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 from streamlit_folium import folium_static
 import folium
-
+import seaborn as sns
 LOGGER = get_logger(__name__)
 
 def LaadDataAPI(URLAPI):
@@ -232,19 +232,20 @@ def MapLaadPalen():
     }
 
     #Staafdiagram
-    plt.figure(figsize=(8, 6)) 
-    ax = provincie_aantallen.plot(kind='bar', color=[kleurenpalet.get(provincie) for provincie in provincie_aantallen.index])
+    plt.figure(figsize=(8, 6))
+    fig1, ax1 = plt.subplots()
 
-    #labels
-    plt.xlabel('Provincie')
-    plt.ylabel('Aantal Laadpalen')
-    plt.title('Aantal laadpalen per Provincie')
+    ax1 = provincie_aantallen.plot(kind='bar', color=[kleurenpalet.get(provincie) for provincie in provincie_aantallen.index])
 
-    # Voeg de aantallen toe 
+    # Labels
+    ax1.set_xlabel('Provincie')
+    ax1.set_ylabel('Aantal Laadpalen')
+    ax1.set_title('Aantal laadpalen per Provincie')
+
+    # Voeg de aantallen toe
     for i, v in enumerate(provincie_aantallen):
-        ax.text(i, v + 8, str(v), ha='center')
+        ax1.text(i, v + 8, str(v), ha='center')
 
-    fig1 = plt
 
     # Top 10 gemeentes
     top_10_gemeentes = df1['Gemeente'].value_counts().nlargest(10)
@@ -262,32 +263,107 @@ def MapLaadPalen():
         'Almere': '#aec7e8'
     }
 
-    # Staafdiagram 
-    plt.figure(figsize=(8, 6)) 
-    ax = top_10_gemeentes.plot(kind='bar', color=[kleurenpalet2.get(gemeente, '#9467bd') for gemeente in top_10_gemeentes.index])
+    plt.figure(figsize=(8, 6))
+    fig2, ax2 = plt.subplots()
 
-    # Voeg labels toe
-    plt.xlabel('Gemeente')
-    plt.ylabel('Aantal laadpalen')
-    plt.title('Top 10 Gemeentes met de meeste laadpalen')
+    ax2 = top_10_gemeentes.plot(kind='bar', color=[kleurenpalet2.get(gemeente, '#9467bd') for gemeente in top_10_gemeentes.index])
+
+    # Labels
+    ax2.set_xlabel('Gemeente')
+    ax2.set_ylabel('Aantal laadpalen')
+    ax2.set_title('Top 10 Gemeentes met de meeste laadpalen')
 
     # Voeg de aantallen toe
     for i, v in enumerate(top_10_gemeentes):
-        ax.text(i, v + 5, str(v), ha='center')
-
-    fig2 = plt
+        ax2.text(i, v + 5, str(v), ha='center')
     # Toon de kaart
     return m,fig1,fig2
+
+def aantalPerBrandstof():
+    pivot_df = pd.read_csv('pivot_auto_brandstof.csv')
+    pivot_df['datum_tenaamstelling'] = pd.to_datetime(pivot_df['datum_tenaamstelling'])
+    fig = px.line(pivot_df[pivot_df['datum_tenaamstelling'].dt.year > 2000], x='datum_tenaamstelling', y=['cum_Benzine','cum_Diesel','cum_Elektriciteit'],
+              labels={'x': 'Tijd(Jaar)', 'value': 'Aantal voertuigen'})
+
+    fig.for_each_trace(lambda t: t.update(name=t.name.replace("cum_Benzine", "Benzine").replace("cum_Diesel", "Diesel").replace("cum_Elektriciteit", "Elektriciteit")))
+    return fig
+
+def LaadTijdBoxEnBar(df1):
+    #nieuwe kolommen en naar datetime
+    df1['Net'] = df1.ConnectedTime - df1.ChargeTime
+    df1['Started'] = pd.to_datetime(df1['Started'], errors='coerce')
+    df1['Ended'] = pd.to_datetime(df1['Ended'], errors='coerce')
+    df1['Year'] = df1['Started'].dt.year
+    df1['Month_name'] = df1['Started'].dt.strftime('%B')
+    df1['Month_number'] = df1['Started'].dt.month
+    df1['Day'] = df1['Started'].dt.day
+    df1= df1[df1['ChargeTime']>=0]
+    df1= df1[df1['ChargeTime']<=24]
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Box(x = df1.Net, name = "Niet aan het laden, wel verbonden"))
+    fig.add_trace(go.Box(x = df1.ChargeTime, name = "Laden"))
+    fig.add_trace(go.Box(x = df1.ConnectedTime, name = "Verbonden"))
+
+    fig.add_annotation(x=3.792, y='Verbonden',
+                text="Mediaan is 3,8 uur",
+                showarrow=True,
+                arrowhead=1, yshift = 10)
+    fig.add_annotation(x=3.792, y='Verbonden',
+                text="Mediaan is 3,8 uur",
+                showarrow=True,
+                arrowhead=1, yshift = 10)
+    fig.add_annotation(x=2.2336, y='Laden',
+                text="Mediaan is 2,2 uur",
+                showarrow=True,
+                arrowhead=1, yshift = 10)
+    fig.add_annotation(x=0.97, y='Niet aan het laden, wel verbonden',
+                text="Mediaan is 1 uur",
+                showarrow=True,
+                arrowhead=1, yshift = 10)
+
+    fig.update_xaxes(title_text = "Tijd aan het laden (uur)")
+    fig.update_layout(title={
+            'text': "Boxplot van de tijd dat er connectie is en geladen wordt",
+            'y':0.9,
+            'x':0.47,
+            'xanchor': 'center',
+            'yanchor': 'top'})
+
+    #gemiddelde totale energie levering per maand
+    ax = sns.barplot(df1, x = 'Month_name', y = 'TotalEnergy')
+    plt.xticks(rotation = 90)
+    plt.title("De gemiddelde totale energie levering per maand")
+    plt.xlabel("Maand")
+    plt.ylabel("Energie (wh)")
+
+    
+
+    for bar in ax.patches:
+        if bar.get_height() > 9500:
+            bar.set_color('red')    
+        else:
+            bar.set_color('lightblue')
+
+    return fig, plt
+
+
 
 def run():
     st.set_page_config(
         page_title="Hello",
         page_icon="hello",
     )
+    
 
-    GekentekendeVoertuigenBrandstof = LaadDataAPI('https://opendata.rdw.nl/resource/8ys7-d773.json?$limit=100000')
-    GekentekendeVoertuigen = LaadDataAPI('https://opendata.rdw.nl/resource/m9d7-ebf2.json?$limit=100')
     LaadPalen = pd.read_csv('laadpaaldata.csv')
+    urll = 'https://opendata.rdw.nl/resource/m9d7-ebf2.csv?$limit=20000&$offset=0&$order=kenteken' # Gekentekende voertuigen
+    Gekentekendevoertuigen = pd.read_csv(urll)
+
+    urlk = 'https://opendata.rdw.nl/resource/8ys7-d773.csv?$limit=20000&$offset=0&$order=kenteken' # Gekentekende voertuigen brandstof
+    Gekentekendevoertuigenbrandstof = pd.read_csv(urlk)
+
     plot = HistLaadpalen(LaadPalen)
     st.pyplot(fig=plot, clear_figure=None, use_container_width=True)
 
@@ -307,6 +383,16 @@ Om de analyse visueel interessanter te maken, hebben we ervoor gekozen om de laa
 Kleuren worden gebruikt om elke gemeente in de top 10 gemakkelijk te identificeren. Elke kleur staat in verband met de kleur van de provincies, zo valt te zien dat er drie gemeentes uit zowel Noord- als Zuid-holland in de top 10 staan met meeste laadpalen.
 """)
 
+    
+    st.plotly_chart(aantalPerBrandstof(), use_container_width=True)
+    
+    boxPalen,BarPalen = LaadTijdBoxEnBar(LaadPalen)
+    st.plotly_chart(boxPalen, use_container_width=True)
+    st.write("""In de bovenstaande barplot is de energie in watt uur per maand laten zien. Wat hier opvalt is dat in de maanden ‘november, december en januari’ de totale geleverde energie het hoogst is. Dit is te hoogstwaarschijnlijk te verklaren omdat deze maanden de koudere maanden zijn. En de accu’s van elektrische autos kunnen niet goed tegen kou, hierdoor gaan ze sneller leeg.""")
+    st.pyplot(BarPalen, use_container_width=True)     
+    st.write("""In de bovenstaande boxplot kan goed gezien worden hoe groot de spreiding is van de tijd dat er verbinding is met een laadpaal. Echter valt het laden ontzettend mee. Het verschil in de mediaan is ook te zien. De mediaan van verbonden zit ongeveer 1.5 uur hoger dan van het laden. Hier kunnen wij uit opmaken dat er dus vaak mensen langer aan de laadpaal zitten dan dat nodig is. Dit is ook te zien in de 3e bosplot, niet laden wel verbonden. Hier is de mediaan een uur. Dit betekent dus dat de auto vaak een uur lang aan de laadpaal zit  zonder op te laden. Hierdoor kan deze laadpaal echter niet meer gebruikt worden dus zou dit efficiënter ingedeeld kunnen worden.""")
+    st.write("""In de bovenstaande barplot is de energie in watt uur per maand laten zien. Wat hier opvalt is dat in de maanden ‘november, december en januari’ de totale geleverde energie het hoogst is. Dit is te hoogstwaarschijnlijk te verklaren omdat deze maanden de koudere maanden zijn. En de accu’s van elektrische autos kunnen niet goed tegen kou, hierdoor gaan ze sneller leeg.""")
 
+    
 if __name__ == "__main__":
     run()
