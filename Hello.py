@@ -212,9 +212,72 @@ def MapLaadPalen():
     for provincie, marker_group in provincie_markers.items():
         marker_group.add_to(m)
     folium.LayerControl(collapsed=False).add_to(m)
+    #laadpalen per provincie.
+    provincie_aantallen = df1['Provincie'].value_counts()
 
+    # Gegeven kleurenpalet
+    kleurenpalet = {
+        'Zeeland': '#1f77b4',
+        'Drenthe': '#ff7f0e',
+        'Noord-Holland': '#2ca02c',
+        'Noord-Brabant': '#d62728',
+        'Zuid-Holland': '#9467bd',
+        'Utrecht': '#8c564b',
+        'Limburg': '#e377c2',
+        'Friesland': '#7f7f7f',
+        'Groningen': '#bcbd22',
+        'Overijssel': '#17becf',
+        'Flevoland': '#aec7e8',
+        'Gelderland': '#ffbb78'
+    }
+
+    #Staafdiagram
+    plt.figure(figsize=(8, 6)) 
+    ax = provincie_aantallen.plot(kind='bar', color=[kleurenpalet.get(provincie) for provincie in provincie_aantallen.index])
+
+    #labels
+    plt.xlabel('Provincie')
+    plt.ylabel('Aantal Laadpalen')
+    plt.title('Aantal laadpalen per Provincie')
+
+    # Voeg de aantallen toe 
+    for i, v in enumerate(provincie_aantallen):
+        ax.text(i, v + 8, str(v), ha='center')
+
+    fig1 = plt
+
+    # Top 10 gemeentes
+    top_10_gemeentes = df1['Gemeente'].value_counts().nlargest(10)
+    # Gegeven kleurenpalet
+    kleurenpalet2 = {
+        'Amsterdam': '#2ca02c',
+        'Haarlemmermeer': '#2ca02c',
+        'Haarlem': '#2ca02c',
+        'Rotterdam': '#9467bd',
+        'Utrecht': '#8c564b',
+        'Alphen aan den Rijn': '#9467bd',
+        'Friesland': '#7f7f7f',
+        'Groningen': '#bcbd22',
+        'Zwolle': '#17becf',
+        'Almere': '#aec7e8'
+    }
+
+    # Staafdiagram 
+    plt.figure(figsize=(8, 6)) 
+    ax = top_10_gemeentes.plot(kind='bar', color=[kleurenpalet2.get(gemeente, '#9467bd') for gemeente in top_10_gemeentes.index])
+
+    # Voeg labels toe
+    plt.xlabel('Gemeente')
+    plt.ylabel('Aantal laadpalen')
+    plt.title('Top 10 Gemeentes met de meeste laadpalen')
+
+    # Voeg de aantallen toe
+    for i, v in enumerate(top_10_gemeentes):
+        ax.text(i, v + 5, str(v), ha='center')
+
+    fig2 = plt
     # Toon de kaart
-    return m 
+    return m,fig1,fig2
 
 def run():
     st.set_page_config(
@@ -229,8 +292,11 @@ def run():
     MapPalen = MapLaadPalen()
 
     st.pyplot(fig=plot, clear_figure=None, use_container_width=True)
-    KaartPaal = MapLaadPalen()
+    KaartPaal,AantalPProv,TopGemeente = MapLaadPalen()
     folium_static(KaartPaal)
+    st.pyplot(fig=AantalPProv, clear_figure=None, use_container_width=True)
+    st.pyplot(fig=TopGemeente, clear_figure=None, use_container_width=True)
+
 
 
 if __name__ == "__main__":
