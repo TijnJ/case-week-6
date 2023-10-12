@@ -22,6 +22,7 @@ import numpy as np
 import plotly.figure_factory as ff
 import scipy.stats as stats
 import matplotlib.pyplot as plt
+from streamlit_folium import folium_static
 import folium
 
 LOGGER = get_logger(__name__)
@@ -65,9 +66,10 @@ def HistLaadpalen(data):
   plt.grid(True)
   return plt
 
-def LaadDataPalen():
-    response = requests.get("https://api.openchargemap.io/v3/poi/?output=json&countrycode=NL&maxresults=5000&compact=true&verbose=false&key=167a791a-2a34-48b6-9838-6468cd96d2c9")
-    responsejson  = response.json()
+def MapLaadPalen():
+    #api binnenhalen
+    response = requests.get("https://api.openchargemap.io/v3/poi/?output=json&countrycode=NL&maxresults=5000&compact=true&verbose=false&key=09b38fb2-dbc2-408b-94a4-be4480a3022e")
+    responsejson=response.json()
     #voorbeeld uit DLO
     df1 = pd.json_normalize(responsejson)
     df4 = pd.json_normalize(df1.Connections)
@@ -77,9 +79,9 @@ def LaadDataPalen():
     df = pd.concat([df1, df5], axis=1)
     #Lijst van kolommen die je wilt verwijderen
     kolommen_te_verwijderen = ['GeneralComments', 'AddressInfo.AddressLine2', 'AddressInfo.ContactTelephone2', 'AddressInfo.ContactEmail',
-            'AddressInfo.ContactTelephone1', 'AddressInfo.RelatedURL', 'AddressInfo.ContactTelephone1',
-            'OperatorsReference', 'DataProvidersReference', 'AddressInfo.AccessComments', 'UUID', 'Connections',
-            'AddressInfo.CountryID', 'AddressInfo.DistanceUnit', 'StatusTypeID',
+             'AddressInfo.ContactTelephone1', 'AddressInfo.RelatedURL', 'AddressInfo.ContactTelephone1',
+             'OperatorsReference', 'DataProvidersReference', 'AddressInfo.AccessComments', 'UUID', 'Connections',
+             'AddressInfo.CountryID', 'AddressInfo.DistanceUnit', 'StatusTypeID',
             'DataProviderID', 'SubmissionStatusTypeID', 'AddressInfo.ID', 'DateLastStatusUpdate', 'OperatorID', 'UsageTypeID'
             ]
 
@@ -93,7 +95,6 @@ def LaadDataPalen():
     # Pas het datum- en tijdformaat aan
     df1['DateLastVerified']= df1['DateLastVerified'].dt.strftime('%Y-%m-%d %H:%M')
     df1['DateCreated'] =     df1['DateCreated'].dt.strftime('%Y-%m-%d %H:%M')
-
     #Juiste namen cleanen
     #Noord-Holland
     df1['AddressInfo.StateOrProvince'] = df1['AddressInfo.StateOrProvince'].str.replace('Noord Holland', "Noord-Holland")
@@ -137,10 +138,11 @@ def LaadDataPalen():
     df1['AddressInfo.StateOrProvince'] = df1['AddressInfo.StateOrProvince'].str.replace('Drente', "Drenthe")
     #Verwijder rijen die ontbreken
     df1.dropna(subset=['AddressInfo.Postcode'], inplace=True)
+    #df1 = df1[df1['AddressInfo.StateOrProvince'].str.strip() != '']
     df1['AddressInfo.Postcode'] = df1['AddressInfo.Postcode'].str.replace(' ', '')
     df1['AddressInfo.Postcode'] = df1['AddressInfo.Postcode'].str.extract('(\d+)')
+    df1.dropna(subset=['AddressInfo.Postcode'], inplace=True)
     df1['AddressInfo.Postcode'] = df1['AddressInfo.Postcode'].astype('int64')
-
     #extra dataset toevoegen om juiste provincies te krijgen.
     postcode_data1 = pd.read_excel('postcodes.xlsx')
 
@@ -148,10 +150,8 @@ def LaadDataPalen():
     postcode_data1.to_csv('postcodes.csv', index=False)
     # Voeg de provinciegegevens toe aan df
     df1 = df1.merge(postcode_data1, left_on='AddressInfo.Postcode', right_on='Postcode', how='inner')
-
     # Overschrijf NaN-waarden 
     df1['AddressInfo.Postcode'] = df1['AddressInfo.Postcode'].combine_first(df1['Provincie'])
-
     # Verwijder de verkeerd opgegeven adressen uit de dataset
     df1 = df1[df1['AddressInfo.Title'] != 'Westervoortsedijk 73-VB']
     df1 = df1[df1['AddressInfo.Title'] != 'Maatheide']
@@ -169,7 +169,6 @@ def LaadDataPalen():
     df1 = df1[df1['AddressInfo.Title'] != 'Duintuin 7']
     df1 = df1[df1['AddressInfo.Title'] != 'Chromiumweg 7']
     df1 = df1[df1['AddressInfo.Title'] != 'Chromiumweg 12']
-
     #map maken
     # Het gemiddelde als startlocatie
     latitude, longitude = df1['AddressInfo.Latitude'].mean(), df1['AddressInfo.Longitude'].mean()
@@ -205,7 +204,7 @@ def LaadDataPalen():
         provincie = row['Provincie']
 
         #provincie op kleur en als cirkel weergegeven
-        folium.CircleMarker([latitude, longitude], radius=5, color=kleuren.get(provincie), fill=True, 
+        folium.CircleMarker([latitude, longitude], radius=3, color=kleuren.get(provincie), fill=True, 
                             fill_color=kleuren.get(provincie, 'gray'), 
                             fill_opacity=0.1, popup=title).add_to(provincie_markers[provincie])
 
@@ -213,7 +212,9 @@ def LaadDataPalen():
     for provincie, marker_group in provincie_markers.items():
         marker_group.add_to(m)
     folium.LayerControl(collapsed=False).add_to(m)
-    return m
+
+    # Toon de kaart
+    return m 
 
 def run():
     st.set_page_config(
@@ -225,11 +226,11 @@ def run():
     GekentekendeVoertuigen = LaadDataAPI('https://opendata.rdw.nl/resource/m9d7-ebf2.json?$limit=100')
     LaadPalen = pd.read_csv('laadpaaldata.csv')
     plot = HistLaadpalen(LaadPalen)
+    MapPalen = MapLaadPalen()
 
     st.pyplot(fig=plot, clear_figure=None, use_container_width=True)
-
-
-
+    KaartPaal = MapLaadPalen()
+    folium_static(KaartPaal)
 
 
 if __name__ == "__main__":
