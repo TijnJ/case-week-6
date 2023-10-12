@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 from streamlit_folium import folium_static
 import folium
 import seaborn as sns
+
 LOGGER = get_logger(__name__)
 
 def LaadDataAPI(URLAPI):
@@ -44,7 +45,7 @@ def HistLaadpalen(data):
   # Histogram van laadtijd
   plt.hist(laadtijd, bins=20, density=True, color='blue', edgecolor='black')
   plt.title('Histogram van Laadtijd')
-  plt.xlabel('Laadtijd (seconden)')
+  plt.xlabel('Laadtijd (Uur)')
   plt.ylabel('Kansdichtheid')
 
 
@@ -355,17 +356,15 @@ def run():
         page_title="Hello",
         page_icon="hello",
     )
-    
+    st.title("""Gebruik elektrische autos Nederland""")
+
+    st.write("""In dit blog zullen wij een analyse maken over de hoeveelheid auto’s die gekocht zijn in Nederland per brandstof categorie, het aantal laadpalen in Nederland en de locatie hiervan en zullen wij van verschillende laadpalen de data analyseren. Denk hierbij aan het kijken of de laadpalen overbezet worden en wanneer deze het meeste stroom moeten geven.""")
 
     LaadPalen = pd.read_csv('laadpaaldata.csv')
-    urll = 'https://opendata.rdw.nl/resource/m9d7-ebf2.csv?$limit=20000&$offset=0&$order=kenteken' # Gekentekende voertuigen
-    Gekentekendevoertuigen = pd.read_csv(urll)
-
-    urlk = 'https://opendata.rdw.nl/resource/8ys7-d773.csv?$limit=20000&$offset=0&$order=kenteken' # Gekentekende voertuigen brandstof
-    Gekentekendevoertuigenbrandstof = pd.read_csv(urlk)
-
     plot = HistLaadpalen(LaadPalen)
     st.pyplot(fig=plot, clear_figure=None, use_container_width=True)
+    st.write("""In het bovenstaande histogram wordt de laadtijd laten zien. Er kan duidelijk gezien worden dat de meest voorkomende laadtijd rond de 2 uur is. De mediaan is dan ook 2.2 ur en het gemiddelde 2.44 uur. Daarnaast is er een kansdichtheid kromming te zien. Deze laat ook zien dat de histogram er als een normaal verdeling uitziet. De laadtijd word vanaf 8 uur erg laag. Dit komt omdat de meeste autos na 8 uur vaak vol zijn en dan kunnen deze dus niet meer worden opgeladen.""")
+
 
     KaartPaal,AantalPProv,TopGemeente = MapLaadPalen()
     folium_static(KaartPaal)
@@ -384,8 +383,6 @@ Kleuren worden gebruikt om elke gemeente in de top 10 gemakkelijk te identificer
 """)
 
     
-    st.plotly_chart(aantalPerBrandstof(), use_container_width=True)
-    
     boxPalen,BarPalen = LaadTijdBoxEnBar(LaadPalen)
     st.plotly_chart(boxPalen, use_container_width=True)
     st.write("""In de bovenstaande barplot is de energie in watt uur per maand laten zien. Wat hier opvalt is dat in de maanden ‘november, december en januari’ de totale geleverde energie het hoogst is. Dit is te hoogstwaarschijnlijk te verklaren omdat deze maanden de koudere maanden zijn. En de accu’s van elektrische autos kunnen niet goed tegen kou, hierdoor gaan ze sneller leeg.""")
@@ -393,6 +390,10 @@ Kleuren worden gebruikt om elke gemeente in de top 10 gemakkelijk te identificer
     st.write("""In de bovenstaande boxplot kan goed gezien worden hoe groot de spreiding is van de tijd dat er verbinding is met een laadpaal. Echter valt het laden ontzettend mee. Het verschil in de mediaan is ook te zien. De mediaan van verbonden zit ongeveer 1.5 uur hoger dan van het laden. Hier kunnen wij uit opmaken dat er dus vaak mensen langer aan de laadpaal zitten dan dat nodig is. Dit is ook te zien in de 3e bosplot, niet laden wel verbonden. Hier is de mediaan een uur. Dit betekent dus dat de auto vaak een uur lang aan de laadpaal zit  zonder op te laden. Hierdoor kan deze laadpaal echter niet meer gebruikt worden dus zou dit efficiënter ingedeeld kunnen worden.""")
     st.write("""In de bovenstaande barplot is de energie in watt uur per maand laten zien. Wat hier opvalt is dat in de maanden ‘november, december en januari’ de totale geleverde energie het hoogst is. Dit is te hoogstwaarschijnlijk te verklaren omdat deze maanden de koudere maanden zijn. En de accu’s van elektrische autos kunnen niet goed tegen kou, hierdoor gaan ze sneller leeg.""")
 
+    st.plotly_chart(aantalPerBrandstof(), use_container_width=True)
+    st.write("""In het bovenstaande lijndiagram is te zien dat de hoeveelheid elektriciteit de afgelopen 20 jaar aanzienlijk is toegenomen. Deze toename weerspiegelt de groeiende populariteit van elektrische voertuigen en de inspanningen om schone energiebronnen te benutten. Er is echter geen afname geweest van het aantal benzine- en dieselauto's, wat suggereert dat traditionele brandstofvoertuigen nog steeds een dominante rol
+Desondanks wijst de grafiek erop dat de verschuiving naar elektrische auto's en andere alternatieve brandstoffen een groeiende trend is. Dit kan een positieve stap zijn richting een duurzamere mobiliteit en een verminderde ecologische impact, en het lijkt erop dat het aantal auto's van alle drie soorten brandstof in de toekomst zal blijven toenemen.
+""")
     
 if __name__ == "__main__":
     run()
