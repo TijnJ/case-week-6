@@ -8,3 +8,5 @@ spicy
 matplotlib
 requests
 folium
+openpyxl
+streamlit_folium
