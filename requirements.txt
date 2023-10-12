@@ -3,8 +3,4 @@ numpy
 pandas
 pydeck
 streamlit
-folium
-requests
 plotly
-scipy
-matplotlib
