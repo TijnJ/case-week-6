@@ -6,6 +6,5 @@ streamlit
 folium
 requests
 plotly
-plotly.express
-scipy.stats
-matplotlib.pyplot
+scipy
+matplotlib
