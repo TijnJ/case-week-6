@@ -4,4 +4,6 @@ pandas
 pydeck
 streamlit
 plotly
-scipy
+spicy
+matplotlib
+requests
