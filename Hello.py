@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 from streamlit_folium import folium_static
 import folium
 import seaborn as sns
+import statsmodels
 
 LOGGER = get_logger(__name__)
 
@@ -300,7 +301,7 @@ def LaadTijdBoxEnBar(df1):
     df1['Day'] = df1['Started'].dt.day
     df1= df1[df1['ChargeTime']>=0]
     df1= df1[df1['ChargeTime']<=24]
-
+    plt.clf()
     fig = go.Figure()
 
     fig.add_trace(go.Box(x = df1.Net, name = "Niet aan het laden, wel verbonden"))
@@ -361,10 +362,7 @@ def run():
     st.write("""In dit blog zullen wij een analyse maken over de hoeveelheid auto’s die gekocht zijn in Nederland per brandstof categorie, het aantal laadpalen in Nederland en de locatie hiervan en zullen wij van verschillende laadpalen de data analyseren. Denk hierbij aan het kijken of de laadpalen overbezet worden en wanneer deze het meeste stroom moeten geven.""")
 
     LaadPalen = pd.read_csv('laadpaaldata.csv')
-    plot = HistLaadpalen(LaadPalen)
-    st.pyplot(fig=plot, clear_figure=None, use_container_width=True)
-    st.write("""In het bovenstaande histogram wordt de laadtijd laten zien. Er kan duidelijk gezien worden dat de meest voorkomende laadtijd rond de 2 uur is. De mediaan is dan ook 2.2 ur en het gemiddelde 2.44 uur. Daarnaast is er een kansdichtheid kromming te zien. Deze laat ook zien dat de histogram er als een normaal verdeling uitziet. De laadtijd word vanaf 8 uur erg laag. Dit komt omdat de meeste autos na 8 uur vaak vol zijn en dan kunnen deze dus niet meer worden opgeladen.""")
-
+    
 
     KaartPaal,AantalPProv,TopGemeente = MapLaadPalen()
     folium_static(KaartPaal)
@@ -385,15 +383,42 @@ Kleuren worden gebruikt om elke gemeente in de top 10 gemakkelijk te identificer
     
     boxPalen,BarPalen = LaadTijdBoxEnBar(LaadPalen)
     st.plotly_chart(boxPalen, use_container_width=True)
-    st.write("""In de bovenstaande barplot is de energie in watt uur per maand laten zien. Wat hier opvalt is dat in de maanden ‘november, december en januari’ de totale geleverde energie het hoogst is. Dit is te hoogstwaarschijnlijk te verklaren omdat deze maanden de koudere maanden zijn. En de accu’s van elektrische autos kunnen niet goed tegen kou, hierdoor gaan ze sneller leeg.""")
-    st.pyplot(BarPalen, use_container_width=True)     
     st.write("""In de bovenstaande boxplot kan goed gezien worden hoe groot de spreiding is van de tijd dat er verbinding is met een laadpaal. Echter valt het laden ontzettend mee. Het verschil in de mediaan is ook te zien. De mediaan van verbonden zit ongeveer 1.5 uur hoger dan van het laden. Hier kunnen wij uit opmaken dat er dus vaak mensen langer aan de laadpaal zitten dan dat nodig is. Dit is ook te zien in de 3e bosplot, niet laden wel verbonden. Hier is de mediaan een uur. Dit betekent dus dat de auto vaak een uur lang aan de laadpaal zit  zonder op te laden. Hierdoor kan deze laadpaal echter niet meer gebruikt worden dus zou dit efficiënter ingedeeld kunnen worden.""")
+    st.pyplot(BarPalen, use_container_width=True)     
     st.write("""In de bovenstaande barplot is de energie in watt uur per maand laten zien. Wat hier opvalt is dat in de maanden ‘november, december en januari’ de totale geleverde energie het hoogst is. Dit is te hoogstwaarschijnlijk te verklaren omdat deze maanden de koudere maanden zijn. En de accu’s van elektrische autos kunnen niet goed tegen kou, hierdoor gaan ze sneller leeg.""")
+
+    plt.clf()
+
+    plothist = HistLaadpalen(LaadPalen)
+    st.pyplot(fig=plothist, clear_figure=True, use_container_width=True)
+    st.write("""In het bovenstaande histogram wordt de laadtijd laten zien. Er kan duidelijk gezien worden dat de meest voorkomende laadtijd rond de 2 uur is. De mediaan is dan ook 2.2 ur en het gemiddelde 2.44 uur. Daarnaast is er een kansdichtheid kromming te zien. Deze laat ook zien dat de histogram er als een normaal verdeling uitziet. De laadtijd word vanaf 8 uur erg laag. Dit komt omdat de meeste autos na 8 uur vaak vol zijn en dan kunnen deze dus niet meer worden opgeladen.""")
+    plt.clf()
+
 
     st.plotly_chart(aantalPerBrandstof(), use_container_width=True)
     st.write("""In het bovenstaande lijndiagram is te zien dat de hoeveelheid elektriciteit de afgelopen 20 jaar aanzienlijk is toegenomen. Deze toename weerspiegelt de groeiende populariteit van elektrische voertuigen en de inspanningen om schone energiebronnen te benutten. Er is echter geen afname geweest van het aantal benzine- en dieselauto's, wat suggereert dat traditionele brandstofvoertuigen nog steeds een dominante rol
 Desondanks wijst de grafiek erop dat de verschuiving naar elektrische auto's en andere alternatieve brandstoffen een groeiende trend is. Dit kan een positieve stap zijn richting een duurzamere mobiliteit en een verminderde ecologische impact, en het lijkt erop dat het aantal auto's van alle drie soorten brandstof in de toekomst zal blijven toenemen.
 """)
     
+    # Laad de gegevens zoals je dat normaal zou doen
+    urll = 'https://opendata.rdw.nl/resource/m9d7-ebf2.csv?$limit=20000&$offset=0&$order=kenteken' # Gekentekende voertuigen
+    df90 = pd.read_csv(urll) 
+
+    urlk = 'https://opendata.rdw.nl/resource/8ys7-d773.csv?$limit=20000&$offset=0&$order=kenteken' # Gekentekende voertuigen brandstof
+    df100 = pd.read_csv(urlk)
+
+
+    df_merged2 = df90.merge(df100, left_on='kenteken', right_on='kenteken', how='inner')
+    df_merged2['datum_tenaamstelling'] = pd.to_datetime(df_merged2['datum_tenaamstelling'], format='%Y%m%d')
+    df_merged2 = df_merged2.dropna(subset=['datum_tenaamstelling'], how='any')
+    df_merged2['Jaar_Eerste_Tenaamstelling'] = df_merged2['datum_tenaamstelling'].dt.year
+    df_merged2['Elek'] = df_merged2['brandstof_omschrijving'] == 'Elektriciteit'
+    elek_per_jaar = df_merged2.groupby('Jaar_Eerste_Tenaamstelling')['Elek'].sum().reset_index()
+    figlijn = px.scatter(elek_per_jaar, x='Jaar_Eerste_Tenaamstelling', y='Elek', trendline="ols")
+    st.plotly_chart(figlijn)
+    st.write("""Deze scatterplot toont de trend in het aantal elektrische voertuigen (EV's) per jaar van eerste registratie. De x-as vertegenwoordigt de jaren waarin de voertuigen voor het eerst zijn geregistreerd, terwijl de y-as het aantal elektrische voertuigen weergeeft. De trendlijn in de plot biedt inzicht in de algemene groei of afname van het aantal elektrische voertuigen in de loop der jaren.
+De plot kan nuttig zijn om te begrijpen hoe de acceptatie en populariteit van elektrische voertuigen in de loop der jaren is geëvolueerd. Het kan dienen als basis voor verdere analyses en besluitvorming met betrekking tot elektrische mobiliteit en laadinfrastructuur.""")
+
+
 if __name__ == "__main__":
     run()
