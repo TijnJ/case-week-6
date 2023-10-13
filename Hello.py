@@ -418,6 +418,7 @@ Desondanks wijst de grafiek erop dat de verschuiving naar elektrische auto's en 
     df_merged2 = df_merged2.dropna(subset=['datum_tenaamstelling'], how='any')
     df_merged2['Jaar_Eerste_Tenaamstelling'] = df_merged2['datum_tenaamstelling'].dt.year
     df_merged2['Elek'] = df_merged2['brandstof_omschrijving'] == 'Elektriciteit'
+    df_merged2 = df_merged2[df_merged2['Jaar_Eerste_Tenaamstelling'] >= 2006]
     elek_per_jaar = df_merged2.groupby('Jaar_Eerste_Tenaamstelling')['Elek'].sum().reset_index()
     figlijn = px.scatter(elek_per_jaar, x='Jaar_Eerste_Tenaamstelling', y='Elek', trendline="ols")
     st.plotly_chart(figlijn)
