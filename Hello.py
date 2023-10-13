@@ -292,6 +292,9 @@ def aantalPerBrandstof():
 
 def LaadTijdBoxEnBar(df1):
     #nieuwe kolommen en naar datetime
+    df1= df1[(df1['ChargeTime'] >= 0) & (df1['ChargeTime'] < 24)]
+    df1= df1[(df1['ConnectedTime'] >= 0) & (df1['ConnectedTime'] < 24)]
+
     df1['Net'] = df1.ConnectedTime - df1.ChargeTime
     df1['Started'] = pd.to_datetime(df1['Started'], errors='coerce')
     df1['Ended'] = pd.to_datetime(df1['Ended'], errors='coerce')
@@ -301,6 +304,8 @@ def LaadTijdBoxEnBar(df1):
     df1['Day'] = df1['Started'].dt.day
     df1= df1[df1['ChargeTime']>=0]
     df1= df1[df1['ChargeTime']<=24]
+        
+
     plt.clf()
     fig = go.Figure()
 
@@ -383,7 +388,7 @@ Kleuren worden gebruikt om elke gemeente in de top 10 gemakkelijk te identificer
     
     boxPalen,BarPalen = LaadTijdBoxEnBar(LaadPalen)
     st.plotly_chart(boxPalen, use_container_width=True)
-    st.write("""In de bovenstaande boxplot kan goed gezien worden hoe groot de spreiding is van de tijd dat er verbinding is met een laadpaal. Echter valt het laden ontzettend mee. Het verschil in de mediaan is ook te zien. De mediaan van verbonden zit ongeveer 1.5 uur hoger dan van het laden. Hier kunnen wij uit opmaken dat er dus vaak mensen langer aan de laadpaal zitten dan dat nodig is. Dit is ook te zien in de 3e bosplot, niet laden wel verbonden. Hier is de mediaan een uur. Dit betekent dus dat de auto vaak een uur lang aan de laadpaal zit  zonder op te laden. Hierdoor kan deze laadpaal echter niet meer gebruikt worden dus zou dit efficiënter ingedeeld kunnen worden.""")
+    st.write("""In de bovenstaande barplot is de energie in watt uur per maand laten zien. Wat hier opvalt is dat in de maanden ‘november, december en januari’ de totale geleverde energie het hoogst is. Dit is te hoogstwaarschijnlijk te verklaren omdat deze maanden de koudere maanden zijn. En de accu’s van elektrische autos kunnen niet goed tegen kou, hierdoor gaan ze sneller leeg.""")
     st.pyplot(BarPalen, use_container_width=True)     
     st.write("""In de bovenstaande barplot is de energie in watt uur per maand laten zien. Wat hier opvalt is dat in de maanden ‘november, december en januari’ de totale geleverde energie het hoogst is. Dit is te hoogstwaarschijnlijk te verklaren omdat deze maanden de koudere maanden zijn. En de accu’s van elektrische autos kunnen niet goed tegen kou, hierdoor gaan ze sneller leeg.""")
 
