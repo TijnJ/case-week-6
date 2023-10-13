@@ -206,7 +206,7 @@ def MapLaadPalen():
         provincie = row['Provincie']
 
         #provincie op kleur en als cirkel weergegeven
-        folium.CircleMarker([latitude, longitude], radius=3, color=kleuren.get(provincie), fill=True, 
+        folium.CircleMarker([latitude, longitude], radius=2, color=kleuren.get(provincie), fill=True, 
                             fill_color=kleuren.get(provincie, 'gray'), 
                             fill_opacity=0.1, popup=title).add_to(provincie_markers[provincie])
 
